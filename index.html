@@ -11,10 +11,10 @@
     <link rel="icon" type="image/svg" href="favicon.svg" />
   </head>
   <body>
-    <section id="reveal" class="stack hidden">
+    <section id="reveal" class="stack">
       <h1 class="stack">
         <img src="favicon.svg" height="32" alt="" />
-        <div>Hey <span id="giver"></span>, you're getting a gift for...</div>
+        <div id="giver"></div>
       </h1>
       <div class="revealer">
         <div id="receiver"></div>
@@ -22,10 +22,10 @@
       </div>
     </section>
 
-    <section id="generator" class="stack">
+    <section id="generator" class="stack hidden">
       <h1 class="inline"><img src="favicon.svg" height="30" alt="" /> Secret Santa</h1>
 
-      <label for="names">Add participants, one name per line. Add exclusions in brackets</label>
+      <label for="names">Add participants, one name per line. Add excluded names in (brackets)</label>
       <div class="grow-wrap">
         <textarea name="names" id="names" rows="1" placeholder="Add names..." autofocus></textarea>
       </div>
@@ -34,6 +34,8 @@
 
       <div id="results" class="stack-half"></div>
     </section>
+
+    <footer>made by <a href="https://seanockert.com">Seano</a></footer>
 
     <script>
       const $receiver = document.getElementById('receiver');
@@ -51,7 +53,18 @@
           .split(/\r?\n/)
           .map((line) => line.trim())
           .filter(Boolean);
-        localStorage.setItem('saved_list', namesList.join('\n'));
+
+        localStorage.setItem('names_list', namesList.join('\n'));
+      };
+
+      const listMatches = (matches) => {
+        $results.innerHTML = '';
+        matches.forEach((match) => {
+          const result = document.createElement('div');
+          const url = `${window.location.origin}?s=${match.code}`;
+          result.innerHTML = `Hey ${match.giver}, reveal your Secret Santa match at <a href="${url}" target="_blank">${url}</a>`;
+          $results.append(result);
+        });
       };
 
       const shuffle = (array) =>
@@ -70,15 +83,15 @@
           }
           return name;
         });
+
         return { sanitizedNames, exclusions };
       };
 
       const assignNames = () => {
-        $results.innerHTML = '';
-
+        matches = [];
         const { sanitizedNames, exclusions } = extractExclusions(namesList);
         const shuffledNames = [...sanitizedNames];
-        const assignments = [];
+
         shuffle(shuffledNames);
 
         sanitizedNames.forEach((giver, i) => {
@@ -87,24 +100,31 @@
 
           if (remainingReceivers.length > 0) {
             const receiver = remainingReceivers[i % remainingReceivers.length];
-            assignments.push({ giver, url: `${window.location.origin}?s=${btoa(`${giver}|${receiver}`)}` });
+            matches.push({ giver, code: btoa(`${giver}|${receiver}`) });
             shuffledNames.splice(shuffledNames.indexOf(receiver), 1);
           }
         });
 
-        assignments.forEach((assignment) => {
-          const result = document.createElement('div');
-          result.innerHTML = `Hey ${assignment.giver}, reveal your Secret Santa match at <a href="${assignment.url}" target="_blank">${assignment.url}</a>`;
-          $results.append(result);
-        });
+        localStorage.setItem('matches_list', JSON.stringify(matches));
+        listMatches(matches);
       };
 
       const decodeMatch = (secretName) => {
-        const match = atob(secretName);
-        const [name, receiver] = match.split('|');
-        $giver.innerText = name;
-        $receiver.innerText = `${receiver}!`;
-        document.title = `${name}'s Secret Santa`;
+        try {
+          const match = atob(secretName);
+          const [name, receiver] = match.split('|');
+
+          if (!receiver) {
+            throw new Error();
+          }
+
+          $giver.innerText = `Hey ${name}, you're getting a gift for...`;
+          $receiver.innerText = `${receiver}!`;
+          document.title = `${name}'s Secret Santa`;
+        } catch (e) {
+          $giver.innerText = `Uh oh, wrong link. Ask for the link again.`;
+          document.querySelector('.revealer').style.display = 'none';
+        }
       };
 
       const expand = (el) => (el.parentNode.dataset.replicatedValue = el.value);
@@ -124,20 +144,24 @@
         $receiver.innerHTML = '';
 
         if (secretName) {
-          $reveal.classList.remove('hidden');
           $generator.classList.add('hidden');
+          $reveal.classList.remove('hidden');
           decodeMatch(secretName);
         } else {
-          $reveal.classList.add('hidden');
           $generator.classList.remove('hidden');
+          $reveal.classList.add('hidden');
 
-          const savedList = localStorage.getItem('saved_list');
-          if (savedList) {
-            $names.value = savedList;
+          const savedNames = localStorage.getItem('names_list');
+          if (savedNames) {
+            $names.value = savedNames;
+            updateNameList();
+            expand($names);
           }
 
-          updateNameList();
-          expand($names);
+          const savedMatches = localStorage.getItem('matches_list');
+          if (savedMatches) {
+            listMatches(JSON.parse(savedMatches));
+          }
         }
       };
     </script>
