@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Secret Santa</title>
+    <meta name="description" content="Reveal your Secret Santa match" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;800&display=swap" rel="stylesheet" />
@@ -11,7 +12,7 @@
     <link rel="icon" type="image/svg" href="favicon.svg" />
   </head>
   <body>
-    <section id="reveal" class="stack">
+    <section id="reveal" class="stack hidden">
       <h1 class="stack">
         <img src="favicon.svg" height="32" alt="" />
         <div id="giver"></div>
@@ -38,15 +39,19 @@
     <footer>made by <a href="https://seanockert.com">Seano</a></footer>
 
     <script>
-      const $receiver = document.getElementById('receiver');
-      const $generator = document.getElementById('generator');
-      const $giver = document.getElementById('giver');
-      const $names = document.getElementById('names');
-      const $results = document.getElementById('results');
-      const $reveal = document.getElementById('reveal');
-      const $revealButton = document.getElementById('reveal-button');
-      const $submit = document.getElementById('submit');
+      const $ = (id) => document.getElementById(id);
+      const [$receiver, $generator, $giver, $names, $results, $reveal, $revealButton, $submit] = [
+        'receiver',
+        'generator',
+        'giver',
+        'names',
+        'results',
+        'reveal',
+        'reveal-button',
+        'submit'
+      ].map($);
       let namesList = [];
+      let nameMaxLength = 0;
 
       const updateNameList = () => {
         namesList = $names.value
@@ -58,19 +63,24 @@
       };
 
       const listMatches = (matches) => {
-        $results.innerHTML = '';
-        matches.forEach((match) => {
-          const result = document.createElement('div');
-          const url = `${window.location.origin}?s=${match.code}`;
-          result.innerHTML = `Hey ${match.giver}, reveal your Secret Santa match at <a href="${url}" target="_blank">${url}</a>`;
-          $results.append(result);
-        });
+        $results.innerHTML = matches
+          .map(
+            (match) => `<div>Hey ${match.giver}, reveal your Secret Santa match at 
+              <a href="${window.location.origin}?s=${match.code}" target="_blank">
+              ${window.location.origin}?s=${match.code}</a></div>`
+          )
+          .join('');
+
+        if (matches.length < namesList.length) {
+          $results.innerHTML += '<div class="critical">Missing a match. Try again</div>';
+        }
       };
 
       const shuffle = (array) =>
         array.forEach((_, i) => {
           const j = Math.floor(Math.random() * (i + 1));
           [array[i], array[j]] = [array[j], array[i]];
+          nameMaxLength = Math.max(nameMaxLength, _.length);
         });
 
       const extractExclusions = (names) => {
@@ -97,10 +107,17 @@
         sanitizedNames.forEach((giver, i) => {
           const excludedReceiver = exclusions[giver];
           const remainingReceivers = shuffledNames.filter((name) => name !== giver && name !== excludedReceiver);
-
           if (remainingReceivers.length > 0) {
             const receiver = remainingReceivers[i % remainingReceivers.length];
-            matches.push({ giver, code: btoa(`${giver}|${receiver}`) });
+            const padding = Math.random()
+              .toString(36)
+              .substr(2, Math.max(nameMaxLength - giver.length + 1, 0));
+
+            console.log(giver, padding);
+            matches.push({
+              giver,
+              code: btoa(`${giver}|${receiver}|${padding}`)
+            });
             shuffledNames.splice(shuffledNames.indexOf(receiver), 1);
           }
         });

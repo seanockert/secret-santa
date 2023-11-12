@@ -2,6 +2,8 @@
   --border-radius: 0.5rem;
   --color-red-dark: #d5263a;
   --color-red: #fd405c;
+  --color-red-light: #fbb7c1;
+  --color-blue: #133cad;
   --easing-base: cubic-bezier(1, -0.16, 0.06, 1.35);
   --font-family: 'Poppins', sans-serif;
   --font-size-base: 1.2rem;
@@ -37,7 +39,7 @@ body {
   font-family: var(--font-family);
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-base);
-  line-height: 1.5;
+  line-height: 1.3;
   min-height: inherit;
   overflow-x: none;
   text-rendering: optimizeLegibility;
@@ -48,8 +50,8 @@ body > * {
   max-width: 60rem;
 }
 
-h1 {
-  line-height: 1.3;
+a {
+  color: var(--color-blue);
 }
 
 footer {
@@ -101,6 +103,10 @@ button:focus {
   gap: var(--size-half);
 }
 
+.critical {
+  color: var(--color-red);
+}
+
 .hidden {
   display: none;
 }
@@ -121,6 +127,11 @@ button:focus {
   overflow: hidden;
   resize: none;
   border-radius: var(--border-radius);
+}
+
+.grow-wrap > textarea:focus {
+  border-color: var(--color-red);
+  outline: 2px solid var(--color-red-light);
 }
 
 .grow-wrap > textarea,
@@ -146,6 +157,8 @@ button:focus {
 .revealer {
   animation: 2s wiggle ease infinite;
   display: grid;
+  margin: 0 auto;
+  max-width: 40rem;
 }
 
 .revealer:hover {
