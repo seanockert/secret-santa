@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Secret Santa</title>
+    <title>Secret Santa Generator</title>
     <meta name="description" content="Reveal your Secret Santa match" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -19,24 +19,26 @@
       </h1>
       <div class="revealer">
         <div id="receiver"></div>
-        <button id="reveal-button">Reveal</button>
+        <button id="reveal-button" class="button">Reveal</button>
       </div>
     </section>
 
     <section id="generator" class="stack hidden">
       <h1 class="inline"><img src="favicon.svg" height="30" alt="" /> Secret Santa</h1>
 
-      <label for="names">Add participants, one name per line. Add excluded names in (brackets)</label>
+      <label for="names" class="stack-half">Add your participants, one name per line.<div class="text-small">To prevent someone from matching, add their name in (brackets) eg. <em>Bob (Alice)</em></div></label>
       <div class="grow-wrap">
-        <textarea name="names" id="names" rows="1" placeholder="Add names..." autofocus></textarea>
+        <textarea name="names" id="names" rows="3" placeholder="Alice
+Bob (Alice)
+..." autofocus></textarea>
       </div>
 
-      <button id="submit" class="primary">Match!</button>
+      <button id="submit" class="button primary">Match!</button>
 
       <div id="results" class="stack-half"></div>
     </section>
 
-    <footer>made by <a href="https://seanockert.com">Seano</a></footer>
+    <footer>made by <a href="https://seanockert.com" title="Visit Seano's website">Seano</a></footer>
 
     <script>
       const $ = (id) => document.getElementById(id);
@@ -65,9 +67,9 @@
       const listMatches = (matches) => {
         $results.innerHTML = matches
           .map(
-            (match) => `<div>Hey ${match.giver}, reveal your Secret Santa match at 
+            (match) => `<button id="${match.code}" title="Tap to copy" onclick="copyText(event, '${match.code}')">Hey ${match.giver}, reveal your Secret Santa match at 
               <a href="${window.location.origin}?s=${match.code}" target="_blank">
-              ${window.location.origin}?s=${match.code}</a></div>`
+              ${window.location.origin}?s=${match.code}</a></button>`
           )
           .join('');
 
@@ -152,6 +154,21 @@
         updateNameList();
         expand(e.target);
       });
+
+      const copyText = (event, elemId) => {
+        if (event.target === event.currentTarget) {
+          const elem = document.getElementById(elemId);
+          if (!elem) return;
+          const textToCopy = elem.innerText || elem.textContent;
+          const textarea = document.createElement('textarea');
+          textarea.value = textToCopy;
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textarea);
+          alert('Copied to clipboard!');
+        }
+      };
 
       window.onload = () => {
         const urlParams = new URLSearchParams(window.location.search);
